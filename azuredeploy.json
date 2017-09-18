@@ -34,7 +34,11 @@
       }
     },
     "vnetName": {
-      "defaultValue": null,
+      "defaultValue": "CZ-NL-VNET-P-CITODO-001",
+      "type": "string"
+    },
+    "subnetName": {
+      "defaultValue": "CZ-NL-SN-DMZ1",
       "type": "string"
     },
     "vmDnsName": {
