@@ -19,11 +19,11 @@
       }
     },
     "adminUsername": {
-      "defaultValue": null,
+      "defaultValue": "demouser",
       "type": "string"
     },
     "adminPassword": {
-      "defaultValue": null,
+      "defaultValue": "demo@pass123",
       "type": "securestring"
     },
     "vnetResourceGroupName": {
@@ -46,7 +46,7 @@
       "type": "string"
     },
     "mySqlPassword": {
-      "defaultValue": null,
+      "defaultValue": "demo@pass123",
       "type": "securestring"
     }
   },
@@ -135,7 +135,7 @@
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
               },
               "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+                "id": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
               },
               "primary": true,
               "privateIPAddressVersion": "IPv4"
@@ -151,7 +151,7 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]",
+        "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
       ]
     },
