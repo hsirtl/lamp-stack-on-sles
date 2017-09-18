@@ -78,6 +78,22 @@
               "sourceAddressPrefixes": [],
               "destinationAddressPrefixes": []
             }
+          },
+          {
+            "name": "AllowHttpInboundToTools",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8081",
+              "sourceAddressPrefix": "[parameters('vnetAddressSpace')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 102,
+              "direction": "Inbound",
+              "sourceAddressPrefixes": [],
+              "destinationAddressPrefixes": []
+            }
           }
         ]
       },

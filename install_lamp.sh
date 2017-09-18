@@ -54,12 +54,31 @@ expect eof
 echo "$SECURE_MYSQL"
 
 # Install PhpMyAdmin
+PHP_MY_ADMIN_DIR=/tools/phpmyadmin
 zypper install -y php7-mbstring
 wget https://files.phpmyadmin.net/phpMyAdmin/4.7.4/phpMyAdmin-4.7.4-all-languages.tar.gz
 tar xzvf phpMyAdmin-4.7.4-all-languages.tar.gz
-mkdir /srv/www/htdocs/phpmyadmin
-mv phpMyAdmin-4.7.4-all-languages/* /srv/www/htdocs/phpmyadmin
-cp /srv/www/htdocs/phpmyadmin/config.sample.inc.php /srv/www/htdocs/phpmyadmin/config.inc.php
-sed -i "s/cfg['blowfish_secret'] = ''/cfg['q1w2e3r4t5z6u7i8o9p0q1w2e3r4t5z6'] = ''/g" /srv/www/htdocs/phpmyadmin/config.inc.php
-sed -i "s/localhost/127.0.0.1/g" /srv/www/htdocs/phpmyadmin/config.inc.php
+mkdir -p $PHP_MY_ADMIN_DIR
+mv phpMyAdmin-4.7.4-all-languages/* $PHP_MY_ADMIN_DIR
+cp $PHP_MY_ADMIN_DIR/config.sample.inc.php $PHP_MY_ADMIN_DIR/config.inc.php
+sed -i "s/cfg['blowfish_secret'] = ''/cfg['q1w2e3r4t5z6u7i8o9p0q1w2e3r4t5z6'] = ''/g" $PHP_MY_ADMIN_DIR/config.inc.php
+sed -i "s/localhost/127.0.0.1/g" $PHP_MY_ADMIN_DIR/config.inc.php
+
+cat << EOF > /etc/apache2/vhosts.d/tools.conf
+Listen 8081
+
+<VirtualHost *:8081>
+    DocumentRoot /tools/
+    ErrorLog /var/log/apache2/tools-error_log
+    CustomLog /var/log/apache2/tools-access_log combined
+    <Directory "/tools/">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF
+
 systemctl restart apache2
+
+echo "Server setup complete."
