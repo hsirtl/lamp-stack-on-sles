@@ -1,0 +1,207 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "defaultValue": "sles12vm",
+      "type": "string"
+    },
+    "vmSize": {
+      "defaultValue": "Standard_DS1_v2",
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS1_v2",
+        "Standard_DS2_v2",
+        "Standard_DS3_v2"
+      ],
+      "metadata": {
+        "description": "The size of the Virtual Machine. Note that some VM sizes in the list are only available in some particular locations. Please check the availability and the price of the VM sizes at https://azure.microsoft.com/en-us/pricing/details/virtual-machines before deployment."
+      }
+    },
+    "adminUsername": {
+      "defaultValue": null,
+      "type": "string"
+    },
+    "adminPassword": {
+      "defaultValue": null,
+      "type": "securestring"
+    },
+    "vnetResourceGroupName": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Resource Group the Virtual Network is deployed to."
+      }
+    },
+    "vnetName": {
+      "defaultValue": null,
+      "type": "string"
+    },
+    "vmDnsName": {
+      "defaultValue": null,
+      "type": "string"
+    },
+    "mySqlPassword": {
+      "defaultValue": null,
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "vnetID": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+    "vmSubnet": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
+    "nicName": "[concat(parameters('vmName'), '-nic')]",
+    "pipName": "[concat(parameters('vmName'), '-pip')]",
+    "nsgName": "[concat(parameters('vmName'), '-nsg')]",
+    "diagStoreName": "[concat(uniqueString(resourceGroup().id),'storage')]",
+    "subnets_default_name": "default",
+    "osDiskName": "[concat(parameters('vmName'), '-osdisk')]",
+    "apiVersion": "2015-06-15"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('vmName')]",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "SUSE",
+            "offer": "SLES",
+            "sku": "12-SP3",
+            "version": "latest"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('vmName'),'-OsDisk')]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            },
+            "diskSizeGB": 512
+          },
+          "dataDisks": []
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          },
+          "secrets": []
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[concat('https', '://', variables('diagStoreName'), '.blob.core.windows.net', '/')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('diagStoreName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('nicName')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('subnets_default_name'))]"
+              },
+              "primary": true,
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "primary": true,
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), variables('subnets_default_name'))]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('pipName')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Dynamic",
+        "idleTimeoutInMinutes": 4,
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('vmDnsName')]",
+          "fqdn": "[concat(parameters('vmDnsName'),'.',resourceGroup().location,'.cloudapp.azure.com')]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('diagStoreName')]",
+      "apiVersion": "2017-06-01",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "Storage",
+      "properties": {}
+    },
+    {
+      "name": "[concat(parameters('vmName'),'/newuserscript')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "[variables('apiVersion')]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
+      ],
+      "tags": {
+        "displayName": "scriptextensiondemo"
+      },
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://hsirtldocs.blob.core.windows.net/scripts/install_lamp.sh"
+          ],
+          "commandToExecute": "[concat('sh install_lamp.sh ', parameters('mySqlPassword'))]"
+        }
+      }
+    }
+  ]
+}
