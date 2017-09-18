@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vnetName": {
+      "defaultValue": "CZ-NL-VNET-P-CITODO-001",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Virtual Network the VMs will be deployed to later. You'll need to provide this name when deploying on of the VMs."
+      }
+    },
+    "vnetAddressSpace": {
+      "defaultValue": "10.1.0.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "The address space of the Virtual Network. Defaults to 10.1.0.0/24 (256 IP addresses)."
+      }
+    },
+    "subnetName": {
+      "defaultValue": "CZ-NL-SN-DMZ1",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the subnet the VMs will be deployed to later. You'll need to provide this name when deploying on of the VMs."
+      }
+    },
+    "subnetAddressSpace": {
+      "defaultValue": "10.1.0.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "The address space of the subnet. Defaults to 10.1.0.0/24 (256 IP addresses)."
+      }
+    }
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "name": "[parameters('vnetName')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "[parameters('vnetName')]"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressSpace')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnetAddressSpace')]"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+  }
+}
