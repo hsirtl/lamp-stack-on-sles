@@ -23,7 +23,7 @@
       "type": "string"
     },
     "adminPassword": {
-      "defaultValue": "demo@pass123",
+      "defaultValue": "Demo@pass123",
       "type": "securestring"
     },
     "vnetResourceGroupName": {
@@ -46,7 +46,7 @@
       "type": "string"
     },
     "mySqlPassword": {
-      "defaultValue": "demo@pass123",
+      "defaultValue": "Demo@pass123",
       "type": "securestring"
     }
   },
