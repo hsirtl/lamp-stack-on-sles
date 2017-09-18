@@ -135,7 +135,7 @@
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
               },
               "subnet": {
-                "id": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+                "id": "[variables('vmSubnet')]"
               },
               "primary": true,
               "privateIPAddressVersion": "IPv4"
@@ -151,8 +151,6 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
-        "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
       ]
     },
     {
