@@ -197,7 +197,7 @@
         "autoUpgradeMinorVersion": true,
         "settings": {
           "fileUris": [
-            "https://hsirtldocs.blob.core.windows.net/scripts/install_lamp.sh"
+            "https://raw.githubusercontent.com/hsirtl/lamp-stack-on-sles/master/install_lamp.sh"
           ],
           "commandToExecute": "[concat('sh install_lamp.sh ', parameters('mySqlPassword'))]"
         }
