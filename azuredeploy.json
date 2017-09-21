@@ -36,7 +36,7 @@
       }
     },
     "vnetResourceGroupName": {
-      "defaultValue": "",
+      "defaultValue": "CZ-NL-RGP-P-CITODO-Network",
       "type": "string",
       "metadata": {
         "description": "Name of the Resource Group the Virtual Network is deployed to. Make sure that the referenced Resource Group is in the same Azure region as the Resource Group of the VM."
