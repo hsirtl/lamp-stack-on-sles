@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Before doing anything, update the system
-# zypper update -y
+zypper update -y
+
+# 
+echo "waagent ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d
 
 # Install Apache2
 zypper install -y apache2
