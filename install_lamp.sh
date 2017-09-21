@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Before doing anything, update the system
-zypper update -y
+# zypper update -y
 
-# 
+# Give Microsoft Azure Agend necessary rights
 echo "waagent ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Install Apache2
