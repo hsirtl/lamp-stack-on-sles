@@ -170,7 +170,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
       ]
     },
     {
