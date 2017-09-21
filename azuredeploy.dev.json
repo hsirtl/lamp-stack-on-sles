@@ -1,0 +1,217 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "defaultValue": "sles12vm",
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Virtual Machine. This is only an internal name visible in the Azure context (Azure Portal, PowerShell, etc.)."
+      }
+    },
+    "vmSize": {
+      "defaultValue": "Standard_DS1_v2",
+      "type": "string",
+      "allowedValues": [
+        "Standard_DS1_v2",
+        "Standard_DS2_v2",
+        "Standard_DS3_v2"
+      ],
+      "metadata": {
+        "description": "The size of the Virtual Machine. Note that some VM sizes in the list are only available in some particular locations. Please check the availability and the price of the VM sizes at https://azure.microsoft.com/en-us/pricing/details/virtual-machines before deployment."
+      }
+    },
+    "adminUsername": {
+      "defaultValue": "demouser",
+      "type": "string",
+      "metadata": {
+        "description": "Name of the admin account that can be used to log in to the Virtual Machine (via SSH etc.)"
+      }
+    },
+    "adminPassword": {
+      "defaultValue": "Demo@pass123",
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the admin account. Default value is 'Demo@pass123'"
+      }
+    },
+    "vnetResourceGroupName": {
+      "defaultValue": "CZ-NL-RGP-P-CITODO-Network",
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Resource Group the Virtual Network is deployed to. Make sure that the referenced Resource Group is in the same Azure region as the Resource Group of the VM."
+      }
+    },
+    "vnetName": {
+      "defaultValue": "CZ-NL-VNET-P-CITODO-001",
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Virtual Network the VM should be deployed to."
+      }
+    },
+    "subnetName": {
+      "defaultValue": "CZ-NL-SN-DMZ1",
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet within the Virtual Network the VM should be deployed to."
+      }
+    },
+    "vmDnsName": {
+      "defaultValue": null,
+      "type": "string",
+      "metadata": {
+        "description": "The DNS name under which the VM can be accessed by (instead of the Public IP address that could change after a VM reprovisioning)."
+      }
+    },
+    "mySqlPassword": {
+      "defaultValue": "Demo@pass123",
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the MySQL root account. Default value is 'Demo@pass123'"
+      }
+    }
+  },
+  "variables": {
+    "vnetID": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+    "vmSubnet": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
+    "nicName": "[concat(parameters('vmName'), '-nic')]",
+    "pipName": "[concat(parameters('vmName'), '-pip')]",
+    "nsgName": "[concat(parameters('vmName'), '-nsg')]",
+    "osDiskName": "[concat(parameters('vmName'), '-osdisk')]",
+    "diagStoreName": "[concat(uniqueString(resourceGroup().id),'storage')]",
+    "apiVersion": "2015-06-15"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('vmName')]",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "SUSE",
+            "offer": "SLES",
+            "sku": "12-SP3",
+            "version": "latest"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat(parameters('vmName'),'-OsDisk')]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            },
+            "diskSizeGB": 512
+          },
+          "dataDisks": []
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          },
+          "secrets": []
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[concat('https', '://', variables('diagStoreName'), '.blob.core.windows.net', '/')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('nicName')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              },
+              "subnet": {
+                "id": "[variables('vmSubnet')]"
+              },
+              "primary": true,
+              "privateIPAddressVersion": "IPv4"
+            }
+          }
+        ],
+        "enableAcceleratedNetworking": false,
+        "enableIPForwarding": false,
+        "primary": true,
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('pipName')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Dynamic",
+        "idleTimeoutInMinutes": 4,
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('vmDnsName')]",
+          "fqdn": "[concat(parameters('vmDnsName'),'.',resourceGroup().location,'.cloudapp.azure.com')]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "name": "[concat(parameters('vmName'),'/newuserscript')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "[variables('apiVersion')]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
+      ],
+      "tags": {
+        "displayName": "scriptextensiondemo"
+      },
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/hsirtl/lamp-stack-on-sles/master/install_lamp.sh"
+          ],
+          "commandToExecute": "[concat('sh install_lamp.sh ', parameters('mySqlPassword'))]"
+        }
+      }
+    }
+  ]
+}
