@@ -4,7 +4,7 @@
 zypper update -y
 
 # 
-echo "waagent ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d
+echo "waagent ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Install Apache2
 zypper install -y apache2
@@ -83,5 +83,10 @@ Listen 8081
 EOF
 
 systemctl restart apache2
+
+# set DNS
+sed -i '/^nameserver/ d' /etc/resolv.conf
+echo "nameserver 10.13.48.77" >> /etc/resolv.conf
+echo "nameserver 10.13.16.1" >> /etc/resolv.conf
 
 echo "Server setup complete."
